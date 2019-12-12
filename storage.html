@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Load from storage</title>
+    <meta charset="utf-8" />
+</head>
+
+<!-- Objective 1.4: Implement HTML5 APIs -->
+
+<body>
+    <main>
+        <section>
+            <section>
+                <h1>Put in storage</h1>
+
+                <section class="put-in-storage">
+                    <form>
+                        <p>
+                            Key:
+                            <input type="text" class="put-in-storage__key" />
+                        </p>
+                        <p>
+                            Value:
+                            <input type="text" class="put-in-storage__value" />
+                        </p>
+
+                        <button type="button" class="btn-add">Add To Storage</button>
+                        <button type="button" class="btn-remove">Remove from Storage</button>
+                        <button type="button" class="btn-clear">Clear Storage</button>
+                    </form>
+                </section>
+            </section>
+            <hr />
+            <section>
+                <h1>Items in storage</h1>
+
+                <section class="items-in-storage">
+                    <table>
+                        <thead>
+                            <td>Key</td>
+                            <td>Value</td>
+                        </thead>
+                        <tbody class="items-in-storage__body">
+
+                        </tbody>
+                    </table>
+                </section>
+            </section>
+            <hr>
+            <section>
+                <h1>Geolocation</h1>
+                <p>Current position is: <span class="geolocation-pos"></span></p>
+                <p>Error: <span class="geolocation-error"></span></p>
+                <p><button class="btn-get-geolocation">Get geolocation</button></p>
+            </section>
+            <hr>
+            <section>
+                <h1>Variable</h1>
+
+                <button class="btn-variable-global-vs-local">Global or local?</button>
+                <button class="btn-variable-global">Should be Global</button>
+
+            </section>
+    </main>
+
+    <script>
+
+        // Objective 1.4: Implement HTML5 APIs
+        // This objective covers how to:
+        // Use the storage API
+        // Use the AppCache API
+        // Use the Geolocation API
+        const eventStream = {
+            subscribed: [],
+            create(name, data) {
+                return new CustomEvent(name, { detail: data })
+            },
+            dispatch(event) {
+                const eventName = event.type
+
+                this.subscribed.forEach(subscribedCurrentEvent => {
+                    if (eventName === subscribedCurrentEvent.name) {
+                        subscribedCurrentEvent.element.dispatchEvent(event)
+                    }
+                })
+            },
+            subscribe(event, obj) {
+                this.subscribed.push({
+                    name: event, element: obj
+                })
+            }
+        }
+        const STORAGE = 'localStorage'
+        const AppStorage = {
+            getStorage() {
+                return window[STORAGE]
+            },
+            add(currentKey, currentValue) {
+                console.log('[AppStorage] Adding: ', currentKey, currentValue)
+                this.getStorage().setItem(currentKey, currentValue)
+
+                const event = eventStream.create('itemAdded', { key: currentKey, value: currentValue })
+                eventStream.dispatch(event)
+            },
+            get(key) {
+                console.log('[AppStorage] Getting: ', key)
+                return this.getStorage().getItem(key)
+            },
+            getAll() {
+                console.log('[AppStorage] Getting all')
+                const storage = this.getStorage()
+
+                if (storage.length) {
+                    const storageData = Object.keys(storage).map(currentKey => {
+                        return { key: currentKey, value: this.get(currentKey) }
+                    })
+
+                    return storageData
+                }
+
+                return []
+            },
+            remove(currentKey) {
+                console.log('[AppStorage] Removing: ', currentKey)
+                this.getStorage().removeItem(currentKey)
+
+                const event = eventStream.create('itemRemoved', { key: currentKey })
+                eventStream.dispatch(event)
+            },
+            clear() {
+                console.log('[AppStorage] Clearing all')
+                this.getStorage().clear()
+
+                const event = eventStream.create('clear')
+                eventStream.dispatch(event)
+            }
+        }
+        const methods = {
+            add() {
+                AppStorage.add(
+                    document.querySelector('.put-in-storage__key').value,
+                    document.querySelector('.put-in-storage__value').value
+                )
+            },
+            remove() {
+                AppStorage.remove(
+                    document.querySelector('.put-in-storage__key').value
+                )
+            },
+            clear() {
+                AppStorage.clear()
+            }
+        }
+        const buildStorageTable = (data) => {
+            const values = data ? data : AppStorage.getAll()
+            const rows = []
+
+            values.forEach((item) => {
+                rows.push(`<tr>
+                    <td>
+                        ${item.key}
+                    </td>
+                    <td>
+                        ${item.value}
+                    </td>
+                </tr>`)
+            })
+
+            const $storageTableBody = document.querySelector('.items-in-storage__body')
+
+            if (data) {
+                $storageTableBody.innerHTML += rows.join('')
+
+                return
+            }
+
+            $storageTableBody.innerHTML = rows.join('')
+        }
+        const buttonsMethods = [
+            {
+                button: 'btn-add',
+                method: 'add'
+            },
+            {
+                button: 'btn-remove',
+                method: 'remove'
+            },
+            {
+                button: 'btn-clear',
+                method: 'clear'
+            }
+        ]
+
+        // Add events
+        buttonsMethods.forEach(item => {
+            document.querySelector(`.${item.button}`).addEventListener('click', evt => {
+                evt.preventDefault()
+
+                methods[item.method]()
+            })
+        })
+
+
+        // Show the localStorage table
+        buildStorageTable()
+
+        const $storageBody = document.querySelector('.items-in-storage__body')
+        eventStream.subscribe('itemAdded', $storageBody)
+        eventStream.subscribe('itemRemoved', $storageBody)
+        eventStream.subscribe('clear', $storageBody)
+
+        $storageBody.addEventListener('itemAdded', evt => {
+            buildStorageTable([
+                { key: evt.detail.key, value: evt.detail.value }
+            ])
+        })
+
+        $storageBody.addEventListener('itemRemoved', evt => {
+            buildStorageTable()
+        })
+
+        $storageBody.addEventListener('clear', evt => {
+            buildStorageTable()
+        })
+
+        // Using the AppCache API
+        // As with Web Storage, the application cache is available in JavaScript as a global object. 
+        // The following code gets a reference to the AppCache global object:
+        // var appCache = window.applicationCache;
+
+        document.querySelector('.btn-get-geolocation').addEventListener('click', () => {
+            const geoLocator = window.navigator.geolocation
+            const successGeolocator = function (position) {
+                document.querySelector('.geolocation-pos').textContent = `Latitude: ${position.coords.latitude} | Latitude: ${position.coords.longitude}`
+            }
+            const errorGeolocator = function (error) {
+                document.querySelector('.geolocation-error').textContent = error
+            }
+            geoLocator.getCurrentPosition(successGeolocator, errorGeolocator, {
+                enableHighAccuracy: true,
+                timeout: 30000
+            })
+            // methods
+            // geoLocator.getCurrentPosition
+            // geoLocator.watchPosition
+            // geoLocator.clearWatch
+
+        })
+
+        // Objective 1.5: Establish the scope of objects and variables
+
+        // Local has precedence than global
+        window.onload = function () {
+            // Global var
+            var scaleX = 0.0;
+
+            document.querySelector('.btn-variable-global-vs-local').onclick = function () {
+                var scaleX = -3;
+                alert(`Value: ${scaleX}`);
+            }
+
+            function scaleDiv() {
+                //code to scale the Div by a factor of scaleX
+                alert(`Value: ${scaleX}`);
+            }
+
+            document.querySelector('.btn-variable-global').onclick = function () {
+                scaleDiv()
+            }
+        }
+
+        // Implementing inheritance
+        // 1
+
+        function Book() {
+            this.name = 'Book 1'
+            this.ISBN = '001'
+            this.title = 'The Book 1 in my life'
+        }
+
+        Book.prototype.value = 1000
+        Book.prototype.from = 'Brazil'
+
+        function BookSon() {
+            Book.call(this)
+        }
+
+        const bookSon = new BookSon()
+        console.log('Book son: ', bookSon.name, bookSon.ISBN, bookSon.title)
+
+        // 2
+        const bookSonTwo = Object.create(Book.prototype)
+        console.log('Book son two: ', bookSonTwo.name, bookSonTwo.ISBN, bookSonTwo.value, bookSonTwo.from)
+
+
+        window.addEventListener("load", onloadHandler);
+        window.addEventListener("load", onloadHandler2);
+        
+        function onloadHandler() {
+            alert("hello event 1.");
+        }
+        function onloadHandler2() {
+            alert("hello event 2.");
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,43 @@
+aside {
+    width: 40%;
+    padding-left: .5rem;
+    margin-left: .5rem;
+    float: right;
+    box-shadow: inset 5px 0 5px -5px #29627e;
+    font-style: italic;
+    color: #29627e;
+}
+
+figure {
+    border: thin #c0c0c0 solid;
+    display: flex;
+    flex-flow: column;
+    padding: 5px;
+    max-width: 220px;
+    margin: 0;
+}
+
+img {
+    max-width: 220px;
+    max-height: 150px;
+}
+
+canvas {
+    border: 1px dashed #040404;
+    /*
+    NÃO USAR CSS PARA DEFINIR O TAMANHO DO CANVAS! FICA TUDO ESQUISITO
+    width: 600px;
+    height: 400px;
+    */
+}
+
+svg {
+    width: 300px;
+    height: 300px;
+    border: 1px dashed #040404;
+}
+
+footer {
+    margin-top: 50px;
+    border-top: 1px dashed #040404;
+}
